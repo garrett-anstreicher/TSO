@@ -220,11 +220,24 @@ function Bellman_d(prim::Primitives, prim_grp::Primitives_collect, param::Params
                 e_next[i_j] += 1 #add one to occupation-specific experience.
                 i_e_next = findfirst(x->x==e_next, e_grid)
 
+                #construct continuation value
                 val_cont = β * (γ_eul + log(sum(exp.(v_work_a[i_x, i_χ, i_m, i_MA, i_l, i_e_next, i_ξ, i_EJ, i_j+1, t+1, :])))) #add continuation value
-                if MA == 1 #already have a masters
-                    val_cont = β * v_work_a[i_x, i_χ, i_m, i_MA, i_l, i_e_next, i_ξ, i_EJ, i_j+1, t+1, 1]
+                if EJ == 0 && i_j == J #first time teaching
+                    val_cont = 0
+                    for i_ξ_next = 1:nξ #loop over potential teacher quality realizations
+                        val_cont += (β/nξ) * (γ_eul + log(sum(exp.(v_work_a[i_x, i_χ, i_m, i_MA, i_l, i_e_next, i_ξ_next, 2, i_j+1, t+1, :])))) #add continuation value
+                    end
                 end
 
+                if MA == 1 #already have a masters
+                    val_cont = β * v_work_a[i_x, i_χ, i_m, i_MA, i_l, i_e_next, i_ξ, i_EJ, i_j+1, t+1, 1]
+                    if EJ == 0 && i_j == J #first time teaching
+                        val_cont = 0
+                        for i_ξ_next = 1:nξ #loop over potential teacher quality realizations
+                            val_cont +=  (β/nξ) * v_work_a[i_x, i_χ, i_m, i_MA, i_l, i_e_next, i_ξ_next, i_EJ, i_j+1, t+1, 1] #add continuation value
+                        end
+                    end
+                end
                 val += val_cont
                 res.v_work_d[i_x, i_χ, i_m, i_MA, i_l, i_e, i_ξ, i_EJ, i_d, i_𝒥, t, i_j+1] = val #update
             end
