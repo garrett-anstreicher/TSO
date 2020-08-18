@@ -43,7 +43,7 @@
 end
 
 @with_kw struct Primitives_collect
-    T::Int64 = 40 #working periods
+    T::Int64 = 10 #working periods
 
     #demographics
     X_grid::Array{Array{Int64,1}} = [] #all together
