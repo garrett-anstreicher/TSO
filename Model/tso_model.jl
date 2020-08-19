@@ -44,10 +44,13 @@ function Initialize(guess::Array{Any,1})
 end
 
 ##function that initializes and solvse model
-function Solve_model(guess::Array{Any,1})
+function Solve_model(guess::Array{Any,1}; nsim::Int64 = 100000)
     prim, prim_grp, param, res = Initialize(guess) #initialize important stuff
+    println("Solving value functions . . .")
     Backward_induct(prim, prim_grp, param, res) #backward induction protocol
-    #prim, param, res #return important stuff
+    println("Simulating data . . .")
+    data_simul = Simulate(prim, prim_grp, param, res; nsim=nsim) #return important stuff
+    data_simul #return simulated dataa
 end
 
 #backward induction protocol
@@ -56,6 +59,7 @@ function Backward_induct(prim::Primitives, prim_grp::Primitives_collect, param::
     #for i = 1:T #loop over time periods
     for i = 1:T #loop over time periods
         t = T - i + 1 #now backwards
+        println(t)
         Bellman_d(prim, prim_grp, param, res, t) #solve phase-4 choices and compute value functions
         Bellman_b(prim, prim_grp, param, res, t) #solve phase-4 choices and compute value functions
         Bellman_a(prim, prim_grp, param, res, t) #solve phase-4 choices and compute value functions
@@ -216,7 +220,7 @@ function Bellman_d(prim::Primitives, prim_grp::Primitives_collect, param::Params
             #the 𝒥 state and just loop over occupation choice
             for i_j = 1:J #loop over occupation choices
                 val = util(prim, param, Ω, i_j, J) #flow utility from occupation choice
-                e_next = e #next-period experience given job choice
+                e_next = copy(e) #next-period experience given job choice
                 e_next[i_j] += 1 #add one to occupation-specific experience.
                 i_e_next = findfirst(x->x==e_next, e_grid)
 
@@ -244,7 +248,7 @@ function Bellman_d(prim::Primitives, prim_grp::Primitives_collect, param::Params
 
             val_nwork = β * (γ_eul + log(sum(exp.(v_work_a[i_x, i_χ, i_m, i_MA, i_l, i_e, i_ξ, i_EJ, 1, t+1, :]))))
             if MA == 1
-                val_nwork = β * v_work_a[i_x, i_χ, i_m, i_MA, i_l, i_e_next, i_ξ, i_EJ, 1, t+1, 1]
+                val_nwork = β * v_work_a[i_x, i_χ, i_m, i_MA, i_l, i_e, i_ξ, i_EJ, 1, t+1, 1]
             end
             res.v_work_d[i_x, i_χ, i_m, i_MA, i_l, i_e, i_ξ, i_EJ, i_d, i_𝒥, t, 1] = val_nwork #update home work option
         end
