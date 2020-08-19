@@ -113,45 +113,44 @@ end
 #Accepts as arguments number of occupations and legnth of experience polynomial
 function Param_init(J::Int64, poly_exp::Int64, nm::Int64, nν::Int64)
     ###wage parameters
-    γ_jw =[ones(1 + poly_exp + 1 + 1 + 1 + 1) for j = 1:J-1]./100
+    γ_jw =[ones(1 + poly_exp + 1 + 1 + 1 + 1) for j = 1:J-1]./1000
     push!(γ_jw, ones(1 + poly_exp + 1)./100) #add on teacher parameters
-    δ_j = [1.0 for j = 1:J-1]./100
+    δ_j = [0.0 for j = 1:J-1]./100
     push!(δ_j, 0.0) #add teacher ability effect (0)
     σ_η = [1.0 for j = 1:J]
 
     ###teacher production
-    γ_0 = ones(1 + poly_exp + 1 + 1 + 1 + 1 + 1 + 1) #intercept, experience, cq, sex, race, major, masters, license
-    δ_0 = 1.0
+    γ_0 = ones(1 + poly_exp + 1 + 1 + 1 + 1 + 1 + 1)./100 #intercept, experience, cq, sex, race, major, masters, license
+    δ_0 = 0.0
     σ_ς = 1.0
     σ_ξ = 1.0
 
     ###preferences
-    α = 1.0
-    λ = 1.0
-    ν = [1.0 for j = 1:nν] #unobserved taste levels for occupations
+    α = 0.01
+    λ = 0.01
+    ν = [0.0 for j = 1:nν] #unobserved taste levels for occupations
 
     #flow utility
-    γ_ju = [ones(2) for j = 1:J]
+    γ_ju = [zeros(2) for j = 1:J]
     κ_j = [1.0 for j = 1:J]
 
     #cost of masters
-    γ_ma = ones(1 + 1 + 1 + 1 + 1) #intercept, cq, sex, race, major
+    γ_ma = zeros(1 + 1 + 1 + 1 + 1) #intercept, cq, sex, race, major
     δ_ma = 1.0
 
     #cost of licensure
-    γ_l = ones(1 + 1 + 1 + 1 +1 + 1) #intercept, cq, sex, race, major, masters
+    γ_l = zeros(1 + 1 + 1 + 1 +1 + 1) #intercept, cq, sex, race, major, masters
     δ_l = 1.0
 
     #first-period major choice
-    γ_m = [ones(1 + 1 + 1 + 1) for m = 1:nm] #intercpet, cq, sex, race
+    γ_m = [zeros(1 + 1 + 1 + 1) for m = 1:nm] #intercpet, cq, sex, race
     δ_m = [1.0 for m = 1:nm]
-    ρ_m = [1.0 for m = 1:nm]
+    ρ_m = [0.0 for m = 1:nm]
 
     #teaching offer parameters
     μ = ones(9)
 
     ###later: stuff governing correlation between unobserved ability and unobserved tastes
-
 
     ####flatten####
     params_flat = []
