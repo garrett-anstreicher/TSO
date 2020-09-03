@@ -83,14 +83,14 @@ end
 
 #struct for holding model value functions
 #phases c and e are when teaching offers arise and people work. no choices to be made.
-mutable struct Results_par
+mutable struct Results
     v_coll::SharedArray{Float64, 3} #college value function
     v_work_a::SharedArray{Float64, 10} #working value function, phase 1
     v_work_b::SharedArray{Float64, 10} #working value function, phase 2
     v_work_d::SharedArray{Float64, 11} #working value function, phase 4
 end
 
-mutable struct Results_par_iter
+mutable struct Results_iter
     v_coll::Array{Float64, 1} #college value function
     v_work_a::Array{Float64, 8} #working value function, phase 1
     v_work_b::Array{Float64, 8} #working value function, phase 2
@@ -98,7 +98,7 @@ mutable struct Results_par_iter
 end
 
 #non-parallel results struct
-mutable struct Results
+mutable struct Results_npar
     v_coll::Array{Float64, 3} #college value function
     v_work_a::Array{Float64, 10} #working value function, phase 1
     v_work_b::Array{Float64, 10} #working value function, phase 2
