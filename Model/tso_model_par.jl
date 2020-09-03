@@ -1,5 +1,5 @@
 ##function to initialze model primitives and parameters
-function Initialize_par(guess::Array{Any,1})
+function Initialize(guess::Array{Any,1})
     prim = Primitives() #initialize model primitives
     @unpack nξ, nm, nMA, nl, ndt, n𝒥, T, J = prim
     @unpack cq_grid, gender_grid, race_grid, θ_grid, ν_grid = prim
@@ -31,7 +31,7 @@ function Initialize_par(guess::Array{Any,1})
     @unpack nX, nχ, ne = prim_grp
 
     #initialize model parametesr
-    p = Reshape_param(prim, guess)
+    p = Reshapeam(prim, guess)
     param = Params(guess = p)
 
     #initialize model value functions
@@ -39,22 +39,22 @@ function Initialize_par(guess::Array{Any,1})
     v_work_a = SharedArray{Float64}(nX, nχ, nm, nMA, nl, ne, nξ, ndt, T, 2) #add states for time and choice of major
     v_work_b = SharedArray{Float64}(nX, nχ, nm, nMA, nl, ne, nξ, ndt, T, 2) #same, but license
     v_work_d = SharedArray{Float64}(nX, nχ, nm, nMA, nl, ne, nξ, ndt, n𝒥, T, J+1) #same, but now ocupation (and home work
-    res = Results_par(v_coll, v_work_a, v_work_b, v_work_d)
+    res = Results(v_coll, v_work_a, v_work_b, v_work_d)
     prim, prim_grp, param, res #return all the stuff
 end
 
 ##function that initializes and solvse model
-function Solve_model_par(guess::Array{Any,1}; nsim::Int64 = 100000)
-    prim, prim_grp, param, res = Initialize_par(guess) #initialize important stuff
+function Solve_model(guess::Array{Any,1}; nsim::Int64 = 100000)
+    prim, prim_grp, param, res = Initialize(guess) #initialize important stuff
     println("Solving value functions . . .")
-    Backward_induct_par(prim, prim_grp, param, res) #backward induction protocol
+    Backward_induct(prim, prim_grp, param, res) #backward induction protocol
     println("Simulating data . . .")
     #data_simul = Simulate(prim, prim_grp, param, res; nsim=nsim) #return important stuff
     #data_simul #return simulated dataa
 end
 
 #backward induction protocol
-function Backward_induct_par(prim::Primitives, prim_grp::Primitives_collect, param::Params, res::Results_par)
+function Backward_induct(prim::Primitives, prim_grp::Primitives_collect, param::Params, res::Results)
     @unpack nξ, nm, nMA, nl, ndt, n𝒥, T, J = prim
     @unpack nX, nχ, ne = prim_grp
 
@@ -74,16 +74,16 @@ function Backward_induct_par(prim::Primitives, prim_grp::Primitives_collect, par
         v_work_a = zeros(nm, nMA, nl, ne, nξ, ndt, T, 2) #add states for time and choice of major
         v_work_b = zeros(nm, nMA, nl, ne, nξ, ndt, T, 2) #same, but license
         v_work_d = zeros(nm, nMA, nl, ne, nξ, ndt, n𝒥, T, J+1) #same, but now ocupation (and home work)
-        res_temp = Results_par_iter(v_coll, v_work_a, v_work_b, v_work_d)
+        res_temp = Results_iter(v_coll, v_work_a, v_work_b, v_work_d)
 
         for i = 1:T #loop over time periods
             t = T - i + 1 #now backwards
             #println(t)
-            Bellman_d_par(prim, prim_grp, param, res_temp, i_x, i_χ, t) #solve phase-4 choices and compute value functions
-            Bellman_b_par(prim, prim_grp, param, res_temp, i_x, i_χ, t) #solve phase-4 choices and compute value functions
-            Bellman_a_par(prim, prim_grp, param, res_temp, i_x, i_χ, t) #solve phase-4 choices and compute value functions
+            Bellman_d(prim, prim_grp, param, res_temp, i_x, i_χ, t) #solve phase-4 choices and compute value functions
+            Bellman_b(prim, prim_grp, param, res_temp, i_x, i_χ, t) #solve phase-4 choices and compute value functions
+            Bellman_a(prim, prim_grp, param, res_temp, i_x, i_χ, t) #solve phase-4 choices and compute value functions
         end
-        Bellman_coll_par(prim, prim_grp, param, res_temp, i_x, i_χ) #run period-0 Bellman
+        Bellman_coll(prim, prim_grp, param, res_temp, i_x, i_χ) #run period-0 Bellman
 
         #update master results struct
         res.v_coll[i_x, i_χ, :] = res_temp.v_coll
@@ -94,7 +94,7 @@ function Backward_induct_par(prim::Primitives, prim_grp::Primitives_collect, par
 end
 
 #College-period Bellman
-function Bellman_coll_par(prim::Primitives, prim_grp::Primitives_collect, param::Params, res::Results_par_iter, i_x::Int64, i_χ::Int64)
+function Bellman_coll(prim::Primitives, prim_grp::Primitives_collect, param::Params, res::Results_iter, i_x::Int64, i_χ::Int64)
     @unpack Π, T, nm = prim #unpack state space sizes
     @unpack X_grid, χ_grid, nX, nχ = prim_grp #grids
     @unpack v_work_a = res
@@ -112,7 +112,7 @@ function Bellman_coll_par(prim::Primitives, prim_grp::Primitives_collect, param:
 end
 
 #phase-1 bellman function
-function Bellman_a_par(prim::Primitives, prim_grp::Primitives_collect, param::Params, res::Results_par_iter, i_x::Int64, i_χ::Int64, t::Int64)
+function Bellman_a(prim::Primitives, prim_grp::Primitives_collect, param::Params, res::Results_iter, i_x::Int64, i_χ::Int64, t::Int64)
     @unpack nm, nMA, nl, nξ, ndt = prim #unpack state space sizes
     @unpack m_grid, MA_grid, l_grid, ξ_grid, dt_grid = prim #grids
     @unpack X_grid, χ_grid, nX, nχ, ne, e_grid = prim_grp
@@ -157,7 +157,7 @@ function Bellman_a_par(prim::Primitives, prim_grp::Primitives_collect, param::Pa
 end
 
 #phase-2 bellman function. Looks a lot like phase 1
-function Bellman_b_par(prim::Primitives, prim_grp::Primitives_collect, param::Params, res::Results_par_iter, i_x::Int64, i_χ::Int64, t::Int64)
+function Bellman_b(prim::Primitives, prim_grp::Primitives_collect, param::Params, res::Results_iter, i_x::Int64, i_χ::Int64, t::Int64)
     @unpack J, nm, nMA, nl, nξ, ndt = prim #unpack state space sizes
     @unpack m_grid, MA_grid, l_grid, ξ_grid, dt_grid = prim #grids
     @unpack X_grid, χ_grid, nX, nχ, ne, e_grid = prim_grp
@@ -196,7 +196,7 @@ function Bellman_b_par(prim::Primitives, prim_grp::Primitives_collect, param::Pa
 end
 
 #phase-4 bellman function
-function Bellman_d_par(prim::Primitives, prim_grp::Primitives_collect, param::Params, res::Results_par_iter, i_x::Int64, i_χ::Int64, t::Int64)
+function Bellman_d(prim::Primitives, prim_grp::Primitives_collect, param::Params, res::Results_iter, i_x::Int64, i_χ::Int64, t::Int64)
     @unpack β, J, T, nm, nMA, nl, nξ, ndt, n𝒥 = prim #unpack state space sizes
     @unpack m_grid, MA_grid, l_grid, ξ_grid, dt_grid, 𝒥_grid = prim #grids
     @unpack X_grid, χ_grid, nX, nχ, ne, e_grid = prim_grp
