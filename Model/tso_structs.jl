@@ -30,10 +30,8 @@
     nl::Int64 = length(l_grid)
 
     #teacher quality
-    ξ_grid::Array{Float64,1} = [-1.0, 0.0, 1.0] #levels of teaching quality
-    EJ_grid::Array{Int64,1} = [0,1] #dummy for ever having teached (and so whether individual knows their quality)
-    nEJ::Int64 = length(EJ_grid)
-    nξ::Int64 = length(ξ_grid)
+    ξ_grid::Array{Float64,1} = [0.0, -1.0, 0.0, 1.0] #levels of teaching quality
+    nξ::Int64 = length(ξ_grid) #additioanl state for teaching quality being unknown
 
     #previous job and teaching job offer
     dt_grid::Array{Int64,1} = collect(0:1:J) #number of possible previous occupations
@@ -85,9 +83,24 @@ end
 
 #struct for holding model value functions
 #phases c and e are when teaching offers arise and people work. no choices to be made.
+mutable struct Results_par
+    v_coll::SharedArray{Float64, 3} #college value function
+    v_work_a::SharedArray{Float64, 10} #working value function, phase 1
+    v_work_b::SharedArray{Float64, 10} #working value function, phase 2
+    v_work_d::SharedArray{Float64, 11} #working value function, phase 4
+end
+
+mutable struct Results_par_iter
+    v_coll::Array{Float64, 1} #college value function
+    v_work_a::Array{Float64, 8} #working value function, phase 1
+    v_work_b::Array{Float64, 8} #working value function, phase 2
+    v_work_d::Array{Float64, 9} #working value function, phase 4
+end
+
+#non-parallel results struct
 mutable struct Results
     v_coll::Array{Float64, 3} #college value function
-    v_work_a::Array{Float64, 11} #working value function, phase 1
-    v_work_b::Array{Float64, 11} #working value function, phase 2
-    v_work_d::Array{Float64, 12} #working value function, phase 4
+    v_work_a::Array{Float64, 10} #working value function, phase 1
+    v_work_b::Array{Float64, 10} #working value function, phase 2
+    v_work_d::Array{Float64, 11} #working value function, phase 4
 end
