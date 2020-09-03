@@ -1,7 +1,7 @@
 using Distributed
 #add processes
 workers()
-addprocs(3)
+addprocs(5)
 
 
 ###setup
@@ -16,7 +16,6 @@ addprocs(3)
 @everywhere include("tso_utilities.jl")
 @everywhere include("tso_background_functions.jl")
 @everywhere include("tso_model_par.jl")
-@everywhere include("tso_model.jl")
 #@everywhere include("tso_simulate_par.jl")
 #include("tso_estimate.jl")
 
@@ -24,7 +23,7 @@ addprocs(3)
 #initialize parameters and primitives for the first time
 @everywhere guess_init = Param_init(2, 3, 2, 2)
 #Solve_model(guess_init; nsim=100000)
-#@elapsed data_simul = Solve_model(guess_init; nsim=10000)
+@elapsed data_simul = Solve_model(guess_init; nsim=10000)
 
 
 #=
