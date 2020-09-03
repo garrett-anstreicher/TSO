@@ -5,7 +5,7 @@ function μ(prim::Primitives, param::Params, Ω::Array{Any,1}, l::Int64)
     #arguments: license, last-period teaching choice, and total experience
     @unpack J, poly_exp = prim
     @unpack μ = param
-    e, dt = Ω[6], Ω[9]
+    e, dt = Ω[6], Ω[8]
     e_teach = e[J] #teaching experience
     teach_last = 1 * (dt == J) #dummy for having teached in pervious period
 
@@ -48,7 +48,7 @@ function util(prim::Primitives, param::Params, Ω::Array{Any,1}, j::Int64, J::In
     util = α* exp(w(prim, param, Ω, j)) #start with wage
     util += X[2] * γ[1] #gender utility component
     util += X[3] * γ[2] #race component
-    util += κ * (j!=Ω[9]) #add job switching cost
+    util += κ * (j!=Ω[8]) #add job switching cost
     util += ν[ν_index] #add unobserved taste for occupation j
 
     #add teaching VA
@@ -108,7 +108,7 @@ function va(prim::Primitives, param::Params, Ω::Array{Any,1})
     end
 
     #individuals make decisions based off their expected VA, so if they don't know thier state yet we don't have to add it.
-    va = Ω[7] * Ω[8] #idiosyncratic term multiplied by whether individual is aware of thier quality (otherwise expect 0)
+    va = Ω[7] #idiosyncratic term. Note that value is set to zero if agent is in state corresponding to not knowing
     va += δ_0 * θ #add ability effect
     va += γ_int + sum(γ_exp .* exp_vec) + γ_cq * X[1] + γ_g*X[2] + γ_r*X[3] + γ_m*m + γ_MA*MA + γ_l*l
     va #return
