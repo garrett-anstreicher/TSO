@@ -1,5 +1,5 @@
 #########Simulation routine
-function Simulate(prim::Primitives, prim_grp::Primitives_collect, param::Params, res::Results_par; nsim::Int64=100000)
+function Simulate(prim::Primitives, prim_grp::Primitives_collect, param::Params, res::Results; nsim::Int64=100000)
     @unpack β, J, T, nm, nMA, nl, nξ, ndt, n𝒥 = prim #unpack state space sizes
     @unpack m_grid, MA_grid, l_grid, ξ_grid, dt_grid, 𝒥_grid = prim #grids
     @unpack X_grid, χ_grid, nX, nχ, ne, e_grid = prim_grp
@@ -7,8 +7,6 @@ function Simulate(prim::Primitives, prim_grp::Primitives_collect, param::Params,
     @unpack σ_η, σ_ς = param
     data_simul = Any[] #preallocate simulated data
     dist_gumbel = Gumbel(0,1)
-
-
 
     for i = 1:nsim #number of simulations
         i_X, i_χ, i_ξ_true = rand(1:nX), rand(1:nχ), rand(2:nξ) #to start: randomly draw demographics and unobserved heterogeneity
