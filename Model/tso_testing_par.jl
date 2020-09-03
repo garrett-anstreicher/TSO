@@ -15,8 +15,8 @@ addprocs(5)
 @everywhere include("tso_structs.jl")
 @everywhere include("tso_utilities.jl")
 @everywhere include("tso_background_functions.jl")
-@everywhere include("tso_model_par.jl")
-#@everywhere include("tso_simulate_par.jl")
+@everywhere include("tso_model.jl")
+@everywhere include("tso_simulate.jl")
 #include("tso_estimate.jl")
 
 
