@@ -127,16 +127,20 @@ function cost_MA(prim::Primitives, param::Params, Ω::Array{Any,1})
     #construct
     cost = δ * θ #initialize with ability effect
     cost += γ_int + γ_cq*X[1] + γ_g * X[2] + γ_r*X[3] + γ_m * m #add other stuff
-    cost
+    return exp(cost)
 end
 
 
 #function that governs how costly it is to obtain a license, ignoring utliity shocks
-function cost_license(prim::Primitives, param::Params, Ω::Array{Any,1})
+function cost_license(prim::Primitives, param::Params, Ω::Array{Any,1}; override::Int64 = 0)
     @unpack γ_l, δ_l = param
     @unpack J = prim
     X, θ, m, MA = Ω[1], Ω[2][1], Ω[3], Ω[4] #relevant state variables
     γ, δ = γ_l, δ_l
+
+    if override == 1 #switch MA state if agetn is evaluating continuatino value from getting an MA
+        MA = 1
+    end
 
     #setup
     γ_int, γ_cq, γ_g, γ_r, γ_m, γ_MA = γ[1], γ[2], γ[3], γ[4], γ[5], γ[6]
@@ -144,11 +148,11 @@ function cost_license(prim::Primitives, param::Params, Ω::Array{Any,1})
     #construct
     cost = δ * θ #initialize with ability effect
     cost += (γ_int + γ_cq * X[1] + γ_g*X[2] + γ_r*X[3] + γ_m*m + γ_MA*MA)
-    cost
+    return exp(cost)
 end
 
 #function that governs how costly it is to obtain certain college majors
-function util_major(prim::Primitives, param::Params, Ω::Array{Array{Int64,1},1}, i_m::Int64)
+function util_major(prim::Primitives, param::Params, Ω::Array{Any,1}, i_m::Int64)
     @unpack γ_m, δ_m, ρ_m, ν = param
     @unpack J = prim  #not quite so simple with teh ν
 
