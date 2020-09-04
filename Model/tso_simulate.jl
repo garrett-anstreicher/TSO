@@ -7,6 +7,7 @@ function Simulate(prim::Primitives, prim_grp::Primitives_collect, param::Params,
     @unpack σ_η, σ_ς = param
     data_simul = Any[] #preallocate simulated data
     dist_gumbel = Gumbel(0,1)
+    dist_normal = Normal(0,1)
 
     for i = 1:nsim #number of simulations
         i_X, i_χ, i_ξ_true = rand(1:nX), rand(1:nχ), rand(2:nξ) #to start: randomly draw demographics and unobserved heterogeneity
@@ -18,6 +19,7 @@ function Simulate(prim::Primitives, prim_grp::Primitives_collect, param::Params,
         MA, l = 0, 0 #preallocate
         e = zeros(J) #initialize no experience
         dt, j = 0, 0, 0 #preallocate
+        X, χ = X_grid[i_X], χ_grid[i_χ]
 
         #initialize other state indices that will be updated over time
         i_MA, i_l, i_e, i_d = 1, 1, 1, 1, 1
@@ -25,7 +27,16 @@ function Simulate(prim::Primitives, prim_grp::Primitives_collect, param::Params,
         for t = 1:T #loop over time periods
             #phase A choice
             if i_MA == 1
-                MA_choice = findmax(v_work_a[i_X, i_χ, i_m, i_MA, i_l, i_e, i_ξ, i_d, t, :] .+ rand(dist_gumbel,2))[2]
+                Ω = [X, χ, m, MA, l, e, ξ, dt] #collect state space
+                cost_m = cost_MA(prim, param, Ω) #cost of getting master
+
+                #first: construct threshold that governs whether agent gets license next period
+                cutoff_pt1 = v_work_a[i_X, i_χ, i_m, i_MA, i_l, i_e, i_ξ, i_d, t, 1]
+                cutoff_pt2 = v_work_a[i_X, i_χ, i_m, i_MA, i_l, i_e, i_ξ, i_d, t, 2] + cost_m
+                cutoff = log(cutoff_pt2 - cutoff_pt1) - log(cost_m) #if shock above this, then DON'T get a license
+                draw = rand(dist_normal)
+                MA_choice = (draw<cutoff) + 1 #choice of MA
+
                 if MA_choice == 2 #individual gets an MA
                     i_MA, MA = 2, 1 #permanently update states
                 end
@@ -33,15 +44,22 @@ function Simulate(prim::Primitives, prim_grp::Primitives_collect, param::Params,
 
             #phase B choice
             if i_l == 1 #no license
-                l_choice = findmax(v_work_b[i_X, i_χ, i_m, i_MA, i_l, i_e, i_ξ, i_d, t, :] .+ rand(dist_gumbel,2))[2]
-                if MA_choice == 2 #individual gets a license
+                Ω = [X, χ, m, MA, l, e, ξ, dt] #collect state space
+                cost_lic = cost_license(prim, param, Ω) #cost of getting master
+
+                #first: construct threshold that governs whether agent gets license next period
+                cutoff_pt1 = v_work_b[i_X, i_χ, i_m, i_MA, i_l, i_e, i_ξ, i_d, t, 1]
+                cutoff_pt2 = v_work_b[i_X, i_χ, i_m, i_MA, i_l, i_e, i_ξ, i_d, t, 2] + cost_lic
+                cutoff = log(cutoff_pt2 - cutoff_pt1) - log(cost_lic) #if shock above this, then DON'T get a license
+                draw = rand(dist_normal)
+                l_choice = (draw<cutoff) + 1 #choice of MA
+
+                if l_choice == 2 #individual gets a license
                     i_l, l = 2, 1 #permanently update states
                 end
             end
 
-            #initialzie other states and collect for ease
-            X, χ, dt = X_grid[i_X], χ_grid[i_χ], dt_grid[i_d]
-            Ω = [X, χ, m, MA, l, e, ξ, dt] #collect state space
+            Ω = [X, χ, m, MA, l, e, ξ, dt] #update state space
 
             #Phase C: draw of offer
             offer_prob = μ(prim, param, Ω, l)
@@ -86,12 +104,4 @@ function Simulate(prim::Primitives, prim_grp::Primitives_collect, param::Params,
     data_simul = vcat(data_simul...) #all together
     data_simul #return
 end
-
-
-
-
-
-
-
-
 ####
