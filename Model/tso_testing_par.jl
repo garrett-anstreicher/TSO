@@ -23,7 +23,7 @@ addprocs(5)
 #initialize parameters and primitives for the first time
 @everywhere guess_init = Param_init(2, 3, 2, 2)
 #Solve_model(guess_init; nsim=100000)
-@elapsed data_simul = Solve_model(guess_init; nsim=10000)
+@elapsed data_simul = Solve_model(guess_init; nsim=50000)
 
 
 #=
