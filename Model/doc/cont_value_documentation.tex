@@ -1,0 +1,61 @@
+%%setup
+\documentclass[12pt]{article}
+\usepackage{datetime}
+\usepackage{setspace}
+\usepackage{etoolbox}
+\usepackage{graphicx}
+\usepackage[bottom]{footmisc}
+\usepackage{natbib}
+\usepackage{caption}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{fancyhdr}
+\usepackage{float}
+\usepackage{mathrsfs}
+\usepackage{bbm}
+\usepackage{float,bm}
+\usepackage{dsfont}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{fancyhdr}
+\setlength{\headheight}{28pt}
+\textheight 8.5in
+\topmargin -.5in
+\usepackage[top=1in, bottom=1in, left=1in, right=1in]{geometry}
+
+
+%%macros
+\newcommand{\figpath}{C:/Users/Garrett/Documents/Grad_School/Work/RIM/Output}
+\newcommand{\lgrange}{\mathscr{L}}
+\newcommand{\sumni}{\sum^n_{i=1}}
+\newcommand{\prodni}{\prod^n_{i=1}}
+\newcommand{\noi}{\bigskip \noindent}
+\newcommand{\Ex}{\mathds{E}}
+\newcommand{\R}{\mathds{R}}
+\newcommand{\bols}{\widehat{\beta}_{OLS}}
+\newcommand{\inv}{^{-1}}
+\newcommand{\indic}{\mathbbm{1}}
+
+\pagestyle{fancy}
+\lhead{Garrett Anstreicher}
+\rhead{Quick Derivation}
+\begin{document}
+We have shifted the shocks that govern whether agents acquire MAs or licenses in the model from Type 1 Extreme Value shocks to normal (or log normal) shocks. This makes computing continuation values marginally more complicated, so this document explains how this is done.
+
+Here I explain how I calculate continuation values in phase A of a given period. Continuation values are based off of expected utility in phase B, wherein the agent chooses whether or not to get a \textbf{license.} The method for computing continuation values in phase D (in anticipation of the agent choosing whether to get their \textbf{MA} in the upcoming phase A) is quite similar. The equations here represent continuation values for agents who DO NOT yet have a license, as continuation values for agents that DO already have a license are trivial.
+
+
+\noi \textbf{Expression of the Phase-A Continuation Value}\\
+Subsume all state variables not related to licensure in the vector $\Omega$. Denote $C_\ell(\Omega)$ as the cost for acquiring a license ---  absent the utility shocks --- for an agent in state $\Omega$. An agent in phase B chooses to acquire a license if
+$$\Ex[V_d(\Omega, 1)] - \exp(C_\ell(\Omega) + \varepsilon) \geq \Ex[V_d(\Omega, 0)],$$ 
+where $\varepsilon \sim N(0, 1)$ ({\color{blue} Quick question: we obviously get a location normalization for the distribution of $\varepsilon$ if there's a constant in $C_\ell(\Omega)$. Do we get a location normalization too?}). Thus, the agent gets a license if
+$$\varepsilon \leq \log \big(\Ex[V_d(\Omega, 1)] - \Ex[V_d(\Omega, 0)]\big) - C_\ell(\Omega)\equiv T,$$
+where $T$ represents the threshold governing whether the agent gets a license. Recall that phase B value functions are given simply by expected phase-D utility minus licensure costs, should the agent choose to get a license. In phase A, then, the agent's continuation value $EV_A$ can be given by
+$$EV_A = \Ex[V_d(\Omega, 0)] \cdot Pr(\varepsilon\geq T) + \Ex[V_d(\Omega, 1) - \exp(C_\ell(\Omega) + \varepsilon) | \varepsilon\leq T]\cdot Pr(\varepsilon\leq T)$$
+$$EV_A = \Ex[V_d(\Omega, 0)] \cdot \left(1-\Phi(T)\right) + \Ex[V_d(\Omega, 1)] \cdot \Phi(T) - \exp(C_\ell(\Omega))\Ex[e^\varepsilon|e^\varepsilon\leq e^T]Pr(e^\varepsilon\leq e^T).$$
+The CDF expressions simplify due to $\varepsilon$ being distributed standar normal. For the final term, use the fact that with normality, we have
+$$\Ex[e^\varepsilon | e^\varepsilon\leq e^T] \cdot Pr(e^\varepsilon \leq e^T) = e^{0.5\sigma^2_\varepsilon} \cdot \left[\Phi\left(\frac{T - \sigma^2_\varepsilon}{\sigma_\varepsilon}\right)\right].$$
+({\color{blue} Note: the above expression was ripped from Chao's 751 notes. Would be good to confirm.}) Since we assume that $\varepsilon$ is distributed standard normal, the continuation value then reduces to
+$$EV_A = \Ex[V_d(\Omega, 0)] \cdot \left(1-\Phi(T)\right) + \Ex[V_d(\Omega, 1)] \cdot \Phi(T) - \exp(C_\ell(\Omega))\sqrt{e} \cdot \Phi(T - 1).$$
+
+
+\end{document}
