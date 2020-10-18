@@ -16,7 +16,7 @@
     nrace::Int64 = length(race_grid)
 
     #unobserved ability and preferences
-    θ_grid::Array{Int64,1} = [1,2] #unobserved ability
+    θ_grid::Array{Int64,1} = [0,1] #unobserved ability
     ν_grid::Array{Int64,1} = [1,2] #low, high taste for each occupation
     nθ::Int64 = length(θ_grid)
     nν::Int64 = length(ν_grid)
@@ -30,7 +30,7 @@
     nl::Int64 = length(l_grid)
 
     #teacher quality
-    ξ_grid::Array{Float64,1} = [0.0, -1.0, 0.0, 1.0] #levels of teaching quality
+    ξ_grid::Array{Float64,1} = [0.0, -0.175, 0.0, 0.175] #levels of teaching quality
     nξ::Int64 = length(ξ_grid) #additioanl state for teaching quality being unknown
 
     #previous job and teaching job offer
@@ -65,20 +65,20 @@ end
     γ_0::Vector{Float64} = guess[4]
     δ_0::Float64 = guess[5]
     σ_ς::Float64 = guess[6]
-    σ_ξ::Float64 = guess[7]
-    α::Float64 = guess[8]
-    λ::Float64 = guess[9]
-    ν::Vector{Float64} = guess[10]
-    γ_ju::Vector{Vector{Float64}} = guess[11]
-    κ_j::Vector{Float64} = guess[12]
-    γ_MA::Vector{Float64} = guess[13]
-    δ_MA::Float64 = guess[14]
-    γ_l::Vector{Float64} = guess[15]
-    δ_l::Float64 = guess[16]
-    γ_m::Vector{Vector{Float64}} = guess[17]
-    δ_m::Vector{Float64} = guess[18]
-    ρ_m::Vector{Float64} = guess[19]
-    μ::Vector{Float64} = guess[20]
+    #σ_ξ::Float64 = guess[7]
+    α::Float64 = guess[7]
+    λ::Float64 = guess[8]
+    ν::Vector{Float64} = guess[9]
+    γ_ju::Vector{Vector{Float64}} = guess[10]
+    κ_j::Vector{Float64} = guess[11]
+    γ_MA::Vector{Float64} = guess[12]
+    δ_MA::Float64 = guess[13]
+    γ_l::Vector{Float64} = guess[14]
+    δ_l::Float64 = guess[15]
+    γ_m::Vector{Vector{Float64}} = guess[16]
+    δ_m::Vector{Float64} = guess[17]
+    ρ_m::Vector{Float64} = guess[18]
+    μ::Vector{Float64} = guess[19]
 end
 
 #struct for holding model value functions
