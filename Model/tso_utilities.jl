@@ -56,8 +56,8 @@ function Reshape_param(prim::Primitives, guess::Array{Any,1})
     γ_0 = guess[index:(index+nparam_va)] #VA parameters
     δ_0 = guess[index + nparam_va + 1] #ability effects
     σ_ς = guess[index + nparam_va + 2] #spread of VA shocks
-    σ_ξ = guess[index + nparam_va + 3] #spread of teaching ability
-    index += (nparam_va + 4) #update index
+    #σ_ξ = guess[index + nparam_va + 3] #spread of teaching ability
+    index += (nparam_va + 3) #update index
 
 
     ######Preferences#######
@@ -104,7 +104,7 @@ function Reshape_param(prim::Primitives, guess::Array{Any,1})
     ###later: stuff governing correlation between unobserved ability and unobserved tastes
 
     #group together
-    params = [γ_jw, δ_j, σ_η, γ_0, δ_0, σ_ς, σ_ξ, α, λ, ν, γ_ju, κ_j, γ_ma, δ_ma, γ_l, δ_l, γ_m, δ_m, ρ_m, μ]
+    params = [γ_jw, δ_j, σ_η, γ_0, δ_0, σ_ς, α, λ, ν, γ_ju, κ_j, γ_ma, δ_ma, γ_l, δ_l, γ_m, δ_m, ρ_m, μ]
     params
 end
 
@@ -112,45 +112,42 @@ end
 ###function that defines and flattens initial guess of model parameters.
 #Accepts as arguments number of occupations and legnth of experience polynomial
 function Param_init(J::Int64, poly_exp::Int64, nm::Int64, nν::Int64)
-    ###wage parameters
-    γ_jw =[ones(1 + poly_exp + 1 + 1 + 1 + 1) for j = 1:J-1]./1000
-    push!(γ_jw, ones(1 + poly_exp + 1)./100) #add on teacher parameters
-    δ_j = [0.0 for j = 1:J-1]./100
+    ###wage parameters #intercept, exp poly, cq, sex, race, major. no MA
+    γ_jw = [[2.674, 0.09543, -0.00318, 0.000034, 0.2, -0.28, -0.21, -0.276]]
+    push!(γ_jw, [2.574, 0.0552, -0.0021, 0.00003, 0.238]) #add on teacher parameters (intercept, experience, MA)
+    δ_j = [0.2 for j = 1:J-1] #ability premium around gender premium. Seems reasonable.
     push!(δ_j, 0.0) #add teacher ability effect (0)
-    σ_η = [1.0 for j = 1:J]
+    σ_η = [0.6856, 0.399] #wage shock SDs
 
     ###teacher production
-    γ_0 = ones(1 + poly_exp + 1 + 1 + 1 + 1 + 1 + 1)./100 #intercept, experience, cq, sex, race, major, masters, license
-    δ_0 = 0.0
-    σ_ς = 1.0
-    σ_ξ = 1.0
+    γ_0 = [-0.01745, 0.00317, -0.0000946, -1.29e-6, 0.005, 0.0147, -0.01548, 0.0, 0.0103, 0.0]
+    δ_0 = 0.01 #around double CQ
+    σ_ς = 0.18
 
     ###preferences
-    α = 0.01
-    λ = 0.01
-    ν = [0.0 for j = 1:nν] #unobserved taste levels for occupations
+    α = 0.1 #wages
+    λ = 5.0 #VA. VA magnitude is much smaller, so not a big deal.
+    ν = [-1.0, 1.0] #unobserved taste levels for occupations
 
     #flow utility
-    γ_ju = [zeros(2) for j = 1:J]
-    κ_j = [1.0 for j = 1:J]
+    γ_ju = [zeros(2) for j = 1:J] #start: no heterogeniety in preferences for jobs by race/sex
+    κ_j = [0.5 for j = 1:J]
 
     #cost of masters
-    γ_ma = zeros(1 + 1 + 1 + 1 + 1) #intercept, cq, sex, race, major
-    δ_ma = 1.0
+    γ_ma = [1.0, -0.2, 0.0, 0.0, -0.2].*3
+    δ_ma = -0.1*3
 
     #cost of licensure
-    γ_l = zeros(1 + 1 + 1 + 1 +1 + 1) #intercept, cq, sex, race, major, masters
-    δ_l = 1.0
+    γ_l = [1.0, -0.2, 0.0, 0.0, -0.2, -0.1].*3 #intercept, cq, sex, race, major, masters
+    δ_l = -0.1 * 3
 
     #first-period major choice
     γ_m = [zeros(1 + 1 + 1 + 1) for m = 1:nm] #intercpet, cq, sex, race
-    δ_m = [1.0 for m = 1:nm]
-    ρ_m = [0.0 for m = 1:nm]
+    δ_m = [3.0 0.0] #higher ability people like non-teaching majors more
+    ρ_m = [1.0 for m = 1:nm]
 
-    #teaching offer parameters
-    μ = ones(9)
-
-    ###later: stuff governing correlation between unobserved ability and unobserved tastes
+    #teaching offer parameters. start: everyboyd with license gets an offer. Nobody without license gets offer.
+    μ = [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
     ####flatten####
     params_flat = []
@@ -163,7 +160,7 @@ function Param_init(J::Int64, poly_exp::Int64, nm::Int64, nν::Int64)
 
     #teacher production and some preferneces
     params_flat = vcat(params_flat, γ_0)
-    params_flat = vcat(params_flat, [δ_0, σ_ς, σ_ξ, α, λ])
+    params_flat = vcat(params_flat, [δ_0, σ_ς, α, λ])
     params_flat = vcat(params_flat, ν)
 
     #occupation preferences
