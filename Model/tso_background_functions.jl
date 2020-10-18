@@ -48,7 +48,7 @@ function util(prim::Primitives, param::Params, Ω::Array{Any,1}, j::Int64, J::In
     util = α* exp(w(prim, param, Ω, j)) #start with wage
     util += X[2] * γ[1] #gender utility component
     util += X[3] * γ[2] #race component
-    util += κ * (j!=Ω[8]) #add job switching cost
+    util -= κ * (j!=Ω[8]) #add job switching cost
     util += ν[ν_index] #add unobserved taste for occupation j
 
     #add teaching VA
