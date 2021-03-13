@@ -1,7 +1,7 @@
 using Distributed
 #add processes
-workers()
-addprocs(5)
+#workers()
+#addprocs(5)
 
 
 ###setup
@@ -19,13 +19,20 @@ addprocs(5)
 @everywhere include("tso_simulate.jl")
 #include("tso_estimate.jl")
 
-
 #initialize parameters and primitives for the first time
 @everywhere guess_init = Param_init(2, 3, 2, 2)
-#Solve_model(guess_init; nsim=100000)
 @elapsed data_simul = Solve_model(guess_init; nsim=50000)
+
+
 CSV.write("test_data.csv", DataFrame(data_simul), header=false) #write CSV file
 
+prim, prim_grp, param, res = Initialize(guess_init) #initialize important stuff
+@unpack γ_MA, δ_MA = param
+Ω = [[0, 0, 0], [0, 2, 1], 0, 0, 0, [9, 1], -0.175, 0, 0]
+cost_MA(prim, param, Ω)
+
+
+Mills(-3.0)
 
 #=
 @everywhere function testpar(guess::Array{Any,1})

@@ -3,7 +3,8 @@
     β::Float64 = 0.95 #discount rate
     Π::Float64 = 0.95^4 #college-to-work discount rate (4 years)
     J::Int64 = 2 #number of occupations (home=0, non-teaching, teaching)
-    T::Int64 = 10 #number of periods
+    #T::Int64 = 10 #number of periods
+    T::Int64 = 20 #number of periods
     poly_exp::Int64 = 3 #degree of polynomial for experience
 
     ######state spaces and dimensions######

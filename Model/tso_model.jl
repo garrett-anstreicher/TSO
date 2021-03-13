@@ -68,6 +68,11 @@ function Backward_induct(prim::Primitives, prim_grp::Primitives_collect, param::
     #begin big loop
     @sync @distributed for i_iter = 1:n_iter
         i_x, i_χ = iter_grid[i_iter][1], iter_grid[i_iter][2]
+        #println("Solving stuff for, ", i_x, " ", i_χ)
+
+        #if i_x!=1 || i_χ!=3
+            #continue
+        #end
 
         #initialize empty type-specific value functions to be filled in
         v_coll = zeros(nm) #add states for major options
@@ -112,11 +117,9 @@ function Bellman_coll(prim::Primitives, prim_grp::Primitives_collect, param::Par
         #first: construct threshold that governs whether agent gets license next period
         cutoff_pt1 = v_work_a[i_m, 1, 1, 1, 1, 1, 1, 1]
         cutoff_pt2 = v_work_a[i_m, 1, 1, 1, 1, 1, 1, 2] + cost_m
-        cutoff = log(cutoff_pt2 - cutoff_pt1) - log(cost_m) #if shock above this, then DON'T get a license
-
-        #construct continuation value
-        val = cutoff_pt1 * (1-cdf(dist, cutoff)) #probability of being above cutoff multiplied by value from not getting license
-        val += (cdf(dist, cutoff) * (cutoff_pt2) - cdf(dist, (cutoff-1)) * exp(0.5) * cost_m) #second part; see Chao's labor notes.
+        cutoff = cutoff_pt2 - cutoff_pt1 - cost_m
+        val = cutoff_pt1 * (1-cdf(dist, cutoff))
+        val += cdf(dist, cutoff) * (cutoff_pt2 - cost_m - Mills(cutoff))
         val += util_major(prim, param, Ω, i_m) #add on non-pecuniary utility for major
         res.v_coll[i_m] = val #update
     end
@@ -144,23 +147,21 @@ function Bellman_a(prim::Primitives, prim_grp::Primitives_collect, param::Params
         end
 
         #nwo check whether we currently have a masters
-        if MA == 1 #no choice to be made
+        if MA == 1 || t>10 #no choice to be made
             val = v_work_b[i_m, i_MA, i_l, i_e, i_ξ, i_d, t, 1] #continuation value if agent aleady has a license
 
-            if l == 0 #agent does not have a license
+            if l == 0 && t<=15 #agent does not have a license and is sufficnetly young
                 cost_lic = cost_license(prim, param, Ω)
 
                 #first: construct threshold that governs whether agent gets license next period
                 cutoff_pt1 = v_work_b[i_m, i_MA, i_l, i_e, i_ξ, i_d, t, 1]
                 cutoff_pt2 = v_work_b[i_m, i_MA, i_l, i_e, i_ξ, i_d, t, 2] + cost_lic
-                cutoff = log(cutoff_pt2 - cutoff_pt1) - log(cost_lic) #if shock above this, then DON'T get a license
-
-                #construct continuation value
-                val = cutoff_pt1 * (1-cdf(dist, cutoff)) #probability of being above cutoff multiplied by value from not getting license
-                val += (cdf(dist, cutoff) * (cutoff_pt2) - cdf(dist, (cutoff-1)) * exp(0.5) * cost_lic) #second part; see Chao's labor notes.
+                cutoff = cutoff_pt2 - cutoff_pt1 - cost_lic
+                val = cutoff_pt1 * (1-cdf(dist, cutoff))
+                val += cdf(dist, cutoff) * (cutoff_pt2 - cost_lic - Mills(cutoff))
             end
             res.v_work_a[i_m, i_MA, i_l, i_e, i_ξ, i_d, t, :] .= val #update
-        elseif MA == 0 #now we're making a choice
+        elseif MA == 0 && t<=10 #now we're making a choice
             for i_s = 1:2 #1 = no masters. 2 = masters
                 val = v_work_b[i_m, i_s, i_l, i_e, i_ξ, i_d, t, 1] #continuation value if agent aleady has a license
 
@@ -170,11 +171,9 @@ function Bellman_a(prim::Primitives, prim_grp::Primitives_collect, param::Params
                     #first: construct threshold that governs whether agent gets license next period
                     cutoff_pt1 = v_work_b[i_m, i_s, i_l, i_e, i_ξ, i_d, t, 1]
                     cutoff_pt2 = v_work_b[i_m, i_s, i_l, i_e, i_ξ, i_d, t, 2] + cost_lic
-                    cutoff = log(cutoff_pt2 - cutoff_pt1) - log(cost_lic) #if shock above this, then DON'T get a license
-
-                    #construct continuation value
-                    val = v_work_b[i_m, i_s, i_l, i_e, i_ξ, i_d, t, 1] * (1-cdf(dist, cutoff)) #probability of being above cutoff multiplied by value from not getting license
-                    val += (cdf(dist, cutoff) * (cutoff_pt2) - cdf(dist, (cutoff-1)) * exp(0.5) * cost_lic) #second part; see Chao's labor notes.
+                    cutoff = cutoff_pt2 - cutoff_pt1 - cost_lic
+                    val = cutoff_pt1 * (1-cdf(dist, cutoff))
+                    val += cdf(dist, cutoff) * (cutoff_pt2 - cost_lic - Mills(cutoff))
                 end
                 cost = cost_MA(prim, param, Ω) * (i_s-1) #cost of obtaining masters
                 res.v_work_a[i_m, i_MA, i_l, i_e, i_ξ, i_d, t, i_s] = val - cost
@@ -205,12 +204,12 @@ function Bellman_b(prim::Primitives, prim_grp::Primitives_collect, param::Params
         end
 
         #nwo check whether we currently have a license
-        if l == 1 #no choice to be made
+        if l == 1 || t>15 #no choice to be made
             μ_j = μ(prim, param, Ω, 1) #probability of teaching offer given parameters, state space, and 1 for license
             val = γ_eul + μ_j * log(sum(exp.(v_work_d[i_m, i_MA, i_l, i_e, i_ξ, i_d, 2, t, 1:J+1]))) #expected value, offer
             val += (1-μ_j) * log(sum(exp.(v_work_d[i_m, i_MA, i_l, i_e, i_ξ, i_d, 1, t, 1:J]))) #expected value, no offer
             res.v_work_b[i_m, i_MA, i_l, i_e, i_ξ, i_d, t, :] .= val
-        elseif l == 0 #now we're making a choice
+        elseif l == 0 && t<=15 #now we're making a choice
             for i_s = 1:2 #1 = no license. 2 = license
                 μ_j = μ(prim, param, Ω, i_s - 1) #probability of teaching offer given parameters, state space, and 1 for license
                 val = γ_eul + μ_j * log(sum(exp.(v_work_d[i_m, i_MA, i_s, i_e, i_ξ, i_d, 2, t, 1:J+1]))) #expected value, offer
@@ -284,13 +283,13 @@ function Bellman_d(prim::Primitives, prim_grp::Primitives_collect, param::Params
                     end
                 end
 
-                if MA == 0 #here's where things get nasty
+                if MA == 0 && t<=9 #here's where things get nasty
                     cost_m = cost_MA(prim, param, Ω) #MA cost
                     cutoff_pt1 = v_work_a[i_m, i_MA, i_l, i_e_next, i_ξ, i_j+1, t+1, 1] #cutoff, part 1
                     cutoff_pt2 = v_work_a[i_m, i_MA, i_l, i_e_next, i_ξ, i_j+1, t+1, 2] + cost_m #cutoff, part 2
-                    cutoff = log(cutoff_pt2 - cutoff_pt1) - log(cost_m) #if shock above this, then DON'T get a license
-                    val_cont = β * cutoff_pt1 * (1-cdf(dist, cutoff)) #probability of being above cutoff multiplied by value from not getting license
-                    val_cont += β * (cdf(dist, cutoff) * (cutoff_pt2) - cdf(dist, (cutoff-1)) * exp(0.5) * cost_m) #second part; see Chao's labor notes.
+                    cutoff = cutoff_pt2 - cutoff_pt1 - cost_m
+                    val_cont = cutoff_pt1 * (1-cdf(dist, cutoff))
+                    val_cont += cdf(dist, cutoff) * (cutoff_pt2 - cost_m - Mills(cutoff))
 
                     if i_ξ == 1 && i_j == J #first time teaching -- now things get even uglier
                         val_cont = 0
@@ -298,9 +297,9 @@ function Bellman_d(prim::Primitives, prim_grp::Primitives_collect, param::Params
                             cost_m = cost_MA(prim, param, Ω) #MA cost
                             cutoff_pt1 = v_work_a[i_m, i_MA, i_l, i_e_next, i_ξ_next, i_j+1, t+1, 1] #cutoff, part 1
                             cutoff_pt2 = v_work_a[i_m, i_MA, i_l, i_e_next, i_ξ_next, i_j+1, t+1, 2] + cost_m #cutoff, part 2
-                            cutoff = log(cutoff_pt2 - cutoff_pt1) - log(cost_m) #if shock above this, then DON'T get a license
-                            val_cont = (β/(nξ-1)) * cutoff_pt1 * (1-cdf(dist, cutoff)) #probability of being above cutoff multiplied by value from not getting license
-                            val_cont += (β/(nξ-1)) * (cdf(dist, cutoff) * (cutoff_pt2) - cdf(dist, (cutoff-1)) * exp(0.5) * cost_m) #second part; see Chao's labor notes.s
+                            cutoff = cutoff_pt2 - cutoff_pt1 - cost_m
+                            val_cont = cutoff_pt1 * (1-cdf(dist, cutoff))
+                            val_cont += cdf(dist, cutoff) * (cutoff_pt2 - cost_m - Mills(cutoff))
                         end
                     end
                 end
@@ -310,17 +309,16 @@ function Bellman_d(prim::Primitives, prim_grp::Primitives_collect, param::Params
 
             #update home work option
             val_nwork = β * v_work_a[i_m, i_MA, i_l, i_e, i_ξ, 1, t+1, 1] #assuming already have MA
-            if MA == 0 #no MA
+            if MA == 0 && t<=9 #no MA
                 cost_m = cost_MA(prim, param, Ω)
 
                 #first: construct threshold that governs whether agent gets license next period
                 cutoff_pt1 = v_work_a[i_m, i_MA, i_l, i_e, i_ξ, 1, t+1, 1]
                 cutoff_pt2 = v_work_a[i_m, i_MA, i_l, i_e, i_ξ, 1, t+1, 2] + cost_m
-                cutoff = log(cutoff_pt2 - cutoff_pt1) - log(cost_m) #if shock above this, then DON'T get a license
 
-                #construct continuation value
-                val_nwork = β * cutoff_pt1 * (1-cdf(dist, cutoff)) #probability of being above cutoff multiplied by value from not getting license
-                val_nwork += β * (cdf(dist, cutoff) * (cutoff_pt2) - cdf(dist, (cutoff-1)) * exp(0.5) * cost_m) #second part; see Chao's labor notes.
+                cutoff = cutoff_pt2 - cutoff_pt1 - cost_m
+                val_nwork = cutoff_pt1 * (1-cdf(dist, cutoff))
+                val_nwork += cdf(dist, cutoff) * (cutoff_pt2 - cost_m - Mills(cutoff))
             end
             res.v_work_d[i_m, i_MA, i_l, i_e, i_ξ, i_d, i_𝒥, t, 1] = val_nwork #update home work option
         end

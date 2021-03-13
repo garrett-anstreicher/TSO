@@ -10,6 +10,12 @@ function discretize_normal(μ_a::Float64, σ_a::Float64, n::Int64)
     draws #return deliverable
 end
 
+#inverse mills ratio
+function Mills(x::Float64)
+    mill = -pdf(Normal(), x)/cdf(Normal(), x)
+    return mill
+end
+
 #function for getting interpolated index of a given Float with an arbitrary grid, assuming linear interpolation
 function get_index(val::Float64, grid::Array{Float64,1})
     n = length(grid)

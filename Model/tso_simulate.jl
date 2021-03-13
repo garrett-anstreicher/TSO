@@ -26,14 +26,14 @@ function Simulate(prim::Primitives, prim_grp::Primitives_collect, param::Params,
 
         for t = 1:T #loop over time periods
             #phase A choice
-            if i_MA == 1
+            if i_MA == 1 && t<=10 #needs to be sufficiently young to get mastesr
                 Ω = [X, χ, m, MA, l, e, ξ, dt] #collect state space
                 cost_m = cost_MA(prim, param, Ω) #cost of getting master
 
                 #first: construct threshold that governs whether agent gets license next period
                 cutoff_pt1 = v_work_a[i_X, i_χ, i_m, i_MA, i_l, i_e, i_ξ, i_d, t, 1]
                 cutoff_pt2 = v_work_a[i_X, i_χ, i_m, i_MA, i_l, i_e, i_ξ, i_d, t, 2] + cost_m
-                cutoff = log(cutoff_pt2 - cutoff_pt1) - log(cost_m) #if shock above this, then DON'T get a license
+                cutoff = cutoff_pt2 - cutoff_pt1 - cost_m #if shock above this, then DON'T get a license
                 draw = rand(dist_normal)
                 MA_choice = (draw<cutoff) + 1 #choice of MA
 
@@ -43,14 +43,14 @@ function Simulate(prim::Primitives, prim_grp::Primitives_collect, param::Params,
             end
 
             #phase B choice
-            if i_l == 1 #no license
+            if i_l == 1 && t<=15 #no license
                 Ω = [X, χ, m, MA, l, e, ξ, dt] #collect state space
                 cost_lic = cost_license(prim, param, Ω) #cost of getting master
 
                 #first: construct threshold that governs whether agent gets license next period
                 cutoff_pt1 = v_work_b[i_X, i_χ, i_m, i_MA, i_l, i_e, i_ξ, i_d, t, 1]
                 cutoff_pt2 = v_work_b[i_X, i_χ, i_m, i_MA, i_l, i_e, i_ξ, i_d, t, 2] + cost_lic
-                cutoff = log(cutoff_pt2 - cutoff_pt1) - log(cost_lic) #if shock above this, then DON'T get a license
+                cutoff = cutoff_pt2 - cutoff_pt1 - cost_lic #if shock above this, then DON'T get a license
                 draw = rand(dist_normal)
                 l_choice = (draw<cutoff) + 1 #choice of MA
 
